@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Configurações — peopleX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-btn menu-toggle" id="open-sidebar" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+        <a class="back-link" href="/dashboard.html"><i data-lucide="arrow-left"></i> Dashboard</a>
+      </header>
+
+      <div class="content-area">
+        <div class="page-heading compact">
+          <div><span class="eyebrow">Configurações</span><h1>E-mail da empresa</h1><p>Configure o SMTP da sua empresa para que comunicados, solicitações e disparos em massa saiam pelo seu próprio domínio</p></div>
+          <span class="status-pill-wrap" id="status-badge"></span>
+        </div>
+
+        <div class="side-grid">
+          <div class="form-card">
+            <h2>Servidor SMTP</h2>
+            <p class="hint">Peça essas informações pra quem administra o e-mail da sua empresa (TI, provedor de e-mail, Google Workspace, etc.). Nenhuma delas é compartilhada com outras empresas na plataforma.</p>
+
+            <div class="form-grid">
+              <div class="field">
+                <label>Host *</label>
+                <input id="smtp-host" type="text" placeholder="smtp.suaempresa.com"/>
+              </div>
+              <div class="field">
+                <label>Porta *</label>
+                <input id="smtp-port" type="number" placeholder="587"/>
+              </div>
+              <div class="field full">
+                <label class="check-row"><input type="checkbox" id="smtp-secure"> Conexão segura (SSL, geralmente porta 465)</label>
+              </div>
+              <div class="field">
+                <label>Usuário *</label>
+                <input id="smtp-user" type="text" placeholder="rh@example.invalid"/>
+              </div>
+              <div class="field">
+                <label>Senha <span class="opt" id="smtp-pass-hint">*</span></label>
+                <input id="smtp-pass" type="password" placeholder="Senha ou senha de app"/>
+              </div>
+              <div class="field">
+                <label>Nome do remetente *</label>
+                <input id="from-name" type="text" placeholder="RH da Empresa"/>
+              </div>
+              <div class="field">
+                <label>E-mail do remetente *</label>
+                <input id="from-email" type="email" placeholder="rh@example.invalid"/>
+              </div>
+            </div>
+
+            <p id="test-result" class="field-msg" hidden></p>
+
+            <div class="form-actions" style="margin-top:18px;max-width:420px;">
+              <button id="btn-testar" class="btn secondary">Testar envio</button>
+              <button id="btn-salvar" class="btn primary">Salvar</button>
+            </div>
+            <button id="btn-remover" class="link-btn muted" style="margin-top:12px;" hidden>Remover configuração</button>
+          </div>
+
+          <div class="reference-card">
+            <h3>Provedores comuns</h3>
+            <p class="hint">Host e porta de referência de quem usa Gmail, Outlook ou SendGrid pra disparo transacional. Confirme com quem administra o e-mail da empresa.</p>
+            <div class="reference-row">
+              <strong>Gmail / Google Workspace</strong>
+              <small>smtp.gmail.com · porta 587 (TLS) · usuário = e-mail completo · senha = senha de app (exige verificação em 2 etapas)</small>
+            </div>
+            <div class="reference-row">
+              <strong>Outlook / Microsoft 365</strong>
+              <small>smtp.office365.com · porta 587 (STARTTLS) · usuário = e-mail completo</small>
+            </div>
+            <div class="reference-row">
+              <strong>SendGrid</strong>
+              <small>smtp.sendgrid.net · porta 587 · usuário = apikey (literal) · senha = sua API key do SendGrid</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+  (async () => {
+    if (!isAdmin()) { window.location.href = '/dashboard.html'; return; }
+    await carregar();
+  })();
+
+  async function carregar() {
+    const r = await CompanySettings.obterEmail();
+    if (!r?.ok) return showToast('Não foi possível carregar as configurações.', 'error');
+    const d = r.data;
+    const badge = document.getElementById('status-badge');
+    const passHint = document.getElementById('smtp-pass-hint');
+    const btnRemover = document.getElementById('btn-remover');
+    if (d.configured) {
+      badge.innerHTML = '<span class="active-pill">Configurado</span>';
+      document.getElementById('smtp-host').value = d.smtp_host;
+      document.getElementById('smtp-port').value = d.smtp_port;
+      document.getElementById('smtp-secure').checked = d.smtp_secure;
+      document.getElementById('smtp-user').value = d.smtp_user;
+      document.getElementById('from-name').value = d.from_name;
+      document.getElementById('from-email').value = d.from_email;
+      document.getElementById('smtp-pass').placeholder = 'Deixe em branco para manter a atual';
+      passHint.textContent = '(deixe em branco para manter)';
+      btnRemover.hidden = false;
+    } else {
+      badge.innerHTML = '<span class="active-pill inactive">Não configurado</span>';
+      passHint.textContent = '*';
+    }
+  }
+
+  function coletar() {
+    return {
+      smtp_host: document.getElementById('smtp-host').value.trim(),
+      smtp_port: Number(document.getElementById('smtp-port').value),
+      smtp_secure: document.getElementById('smtp-secure').checked,
+      smtp_user: document.getElementById('smtp-user').value.trim(),
+      smtp_pass: document.getElementById('smtp-pass').value,
+      from_name: document.getElementById('from-name').value.trim(),
+      from_email: document.getElementById('from-email').value.trim(),
+    };
+  }
+
+  document.getElementById('btn-salvar').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-salvar');
+    btn.textContent = 'Salvando…'; btn.disabled = true;
+    const r = await CompanySettings.salvarEmail(coletar());
+    btn.textContent = 'Salvar'; btn.disabled = false;
+    if (!r?.ok) return showToast(r?.data?.error || 'Não foi possível salvar.', 'error');
+    showToast('Configuração de e-mail salva.', 'success');
+    document.getElementById('smtp-pass').value = '';
+    carregar();
+  });
+
+  document.getElementById('btn-testar').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-testar');
+    const msg = document.getElementById('test-result');
+    btn.textContent = 'Enviando…'; btn.disabled = true; msg.hidden = true;
+
+    const body = coletar();
+    // Se a senha não foi digitada agora, testa a configuração já salva.
+    const r = await CompanySettings.testarEmail(body.smtp_pass ? body : null);
+
+    btn.textContent = 'Testar envio'; btn.disabled = false;
+    msg.hidden = false;
+    if (!r?.ok) { msg.className = 'field-msg error'; msg.textContent = r?.data?.error || 'Falha no teste.'; return; }
+    msg.className = 'field-msg ok'; msg.textContent = `E-mail de teste enviado para ${r.data.sentTo}. Confira a caixa de entrada.`;
+  });
+
+  document.getElementById('btn-remover').addEventListener('click', async () => {
+    if (!window.confirm('Remover a configuração de e-mail desta empresa? Comunicados e solicitações deixam de enviar e-mail até uma nova configuração.')) return;
+    const r = await CompanySettings.removerEmail();
+    if (!r?.ok) return showToast(r?.data?.error || 'Não foi possível remover.', 'error');
+    showToast('Configuração removida.', 'success');
+    document.querySelectorAll('.form-card input').forEach(i => { if (i.type === 'checkbox') i.checked = false; else i.value = ''; });
+    carregar();
+  });
+</script>
+</body>
+</html>

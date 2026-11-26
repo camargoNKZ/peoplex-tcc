@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Redefinir senha — peopleX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    body { font-family: 'DM Sans', sans-serif; background: #fff8f8; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <div class="relative w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-12 h-12 bg-red-700 rounded-2xl mb-4 shadow-lg shadow-red-200">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0
+               008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0
+               0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3
+               15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-semibold text-slate-800">peopleX</h1>
+      <p class="text-slate-500 text-sm mt-1">Definir uma nova senha</p>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-200/80 p-8">
+
+      <div id="carregando" class="text-center text-sm text-slate-500 py-6">Validando o link…</div>
+
+      <div id="invalido" class="hidden">
+        <p class="text-sm text-slate-600 mb-5" id="invalido-texto">
+          Este link de redefinição é inválido ou já expirou. Peça um novo na tela de login.
+        </p>
+        <a href="/login.html" class="block text-center py-3 bg-red-700 hover:bg-red-800
+           text-white text-sm font-medium rounded-xl transition-colors mb-2.5">Voltar ao login da empresa</a>
+        <a href="/admin.html" class="block text-center py-3 border border-slate-200 text-slate-600
+           text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors">Voltar ao painel admin</a>
+      </div>
+
+      <div id="sucesso" class="hidden">
+        <p class="text-sm text-slate-600 mb-5">
+          Senha salva! Entre de novo com a nova senha.
+        </p>
+        <a href="/login.html" class="block text-center py-3 bg-red-700 hover:bg-red-800
+           text-white text-sm font-medium rounded-xl transition-colors mb-2.5">Entrar no painel da empresa</a>
+        <a href="/admin.html" class="block text-center py-3 border border-slate-200 text-slate-600
+           text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors">Entrar no Control Center</a>
+      </div>
+
+      <form id="form-redefinir" class="hidden" onsubmit="return false">
+        <div id="erro" class="hidden mb-5 px-4 py-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl"></div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Nova senha</label>
+          <input id="nova-senha" type="password" placeholder="Mín. 8 caracteres"
+            class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm
+                   text-slate-800 bg-slate-50 focus:bg-white focus:border-red-400 transition-colors"/>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Confirmar nova senha</label>
+          <input id="confirmar-senha" type="password" placeholder="Repita a senha"
+            class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm
+                   text-slate-800 bg-slate-50 focus:bg-white focus:border-red-400 transition-colors"/>
+        </div>
+
+        <button id="btn-salvar" type="button" onclick="salvarNovaSenha()"
+          class="w-full py-3 bg-red-700 hover:bg-red-800 active:scale-[.98]
+                 text-white text-sm font-medium rounded-xl transition-all">
+          Salvar nova senha
+        </button>
+      </form>
+    </div>
+    <p class="text-center text-xs text-slate-400 mt-6">peopleX &copy; 2026</p>
+  </div>
+
+  <script>
+    let supabaseClient = null;
+
+    async function iniciar() {
+      // O Supabase já manda o motivo pronto na própria URL quando o link não
+      // dá certo (ex.: otp_expired, link usado duas vezes) -- checar isso
+      // primeiro evita esperar 4s à toa pra mostrar uma mensagem genérica
+      // quando o Supabase já contou exatamente o que houve.
+      const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+      if (hashParams.get('error')) return mostrarInvalido(hashParams.get('error_code'));
+
+      const configRes = await fetch('/auth/public-config');
+      if (!configRes.ok) return mostrarInvalido();
+      const { url, publishableKey } = await configRes.json();
+
+      supabaseClient = window.supabase.createClient(url, publishableKey, {
+        auth: { detectSessionInUrl: true, persistSession: false, autoRefreshToken: false },
+      });
+
+      // O link do e-mail traz o token na fragment da URL (#access_token=...&type=recovery);
+      // o supabase-js lê isso sozinho (detectSessionInUrl) e emite esse evento quando a
+      // sessão de recuperação fica pronta pra uso.
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+          document.getElementById('carregando').classList.add('hidden');
+          document.getElementById('form-redefinir').classList.remove('hidden');
+        }
+      });
+
+      // Se o link já expirou ou é inválido, nenhum evento acima dispara — depois de
+      // um tempo razoável, assume que não vai disparar e mostra a tela de erro.
+      setTimeout(() => {
+        if (document.getElementById('carregando').classList.contains('hidden')) return;
+        mostrarInvalido();
+      }, 4000);
+    }
+
+    function mostrarInvalido(errorCode) {
+      document.getElementById('carregando').classList.add('hidden');
+      document.getElementById('invalido').classList.remove('hidden');
+      if (errorCode === 'otp_expired') {
+        document.getElementById('invalido-texto').textContent =
+          'Esse link já expirou ou já foi usado (cada link só funciona uma vez). ' +
+          'Se você pediu mais de uma redefinição, só o e-mail mais recente funciona. ' +
+          'Peça um novo na tela de login e clique nele assim que chegar.';
+      }
+    }
+
+    async function salvarNovaSenha() {
+      const senha = document.getElementById('nova-senha').value;
+      const confirmar = document.getElementById('confirmar-senha').value;
+      const erro = document.getElementById('erro');
+      erro.classList.add('hidden');
+
+      if (senha.length < 8) {
+        erro.textContent = 'A senha deve ter no mínimo 8 caracteres.';
+        erro.classList.remove('hidden');
+        return;
+      }
+      if (senha !== confirmar) {
+        erro.textContent = 'As senhas não conferem.';
+        erro.classList.remove('hidden');
+        return;
+      }
+
+      const btn = document.getElementById('btn-salvar');
+      btn.textContent = 'Salvando…';
+      btn.disabled = true;
+
+      const { error } = await supabaseClient.auth.updateUser({ password: senha });
+
+      if (error) {
+        erro.textContent = 'Não foi possível salvar a nova senha. Peça um novo link e tente de novo.';
+        erro.classList.remove('hidden');
+        btn.textContent = 'Salvar nova senha';
+        btn.disabled = false;
+        return;
+      }
+
+      await supabaseClient.auth.signOut();
+      document.getElementById('form-redefinir').classList.add('hidden');
+      document.getElementById('sucesso').classList.remove('hidden');
+    }
+
+    iniciar();
+  </script>
+</body>
+</html>

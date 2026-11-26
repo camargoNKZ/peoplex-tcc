@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Painel de controle da plataforma peopleX">
+  <title>peopleX Control — Administração da plataforma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css?v=20261106-2">
+</head>
+<body>
+  <section class="login-shell" id="login-shell">
+    <div class="login-orb one"></div><div class="login-orb two"></div>
+    <form class="login-card" id="platform-login">
+      <div class="control-brand"><span class="brand-cube" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="12" r="6" fill="#fff" fill-opacity=".92"/><circle cx="15" cy="12" r="6" fill="#fff" fill-opacity=".52"/></svg></span><div><strong>peopleX</strong><small>CONTROL CENTER</small></div></div>
+      <span class="secure-label"><i data-lucide="shield-check"></i> Acesso da plataforma</span>
+      <h1>Controle completo dos seus tenants.</h1>
+      <p>Gerencie empresas, planos, módulos e consumo em um único lugar.</p>
+      <label>E-mail administrativo<input type="email" id="admin-email" autocomplete="username" required placeholder="admin@example.invalid"></label>
+      <label>Senha<input type="password" id="admin-password" autocomplete="current-password" required placeholder="Sua senha"></label>
+      <button type="button" class="forgot-link" id="forgot-password-link" onclick="esqueciSenhaAdmin()">Esqueci minha senha</button>
+      <div class="form-error" id="login-error" hidden></div>
+      <button class="primary-btn full" type="submit"><span>Entrar no painel</span><i data-lucide="arrow-right"></i></button>
+      <small class="login-foot">Ambiente exclusivo da administração peopleX</small>
+    </form>
+  </section>
+
+  <div class="control-shell" id="control-shell" hidden>
+    <aside class="control-sidebar">
+      <div class="control-brand inverse"><span class="brand-cube" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="12" r="6" fill="#fff" fill-opacity=".92"/><circle cx="15" cy="12" r="6" fill="#fff" fill-opacity=".52"/></svg></span><div><strong>peopleX</strong><small>CONTROL CENTER</small></div></div>
+      <nav>
+        <span class="nav-caption">PLATAFORMA</span>
+        <button class="control-nav active" data-view="overview"><i data-lucide="layout-dashboard"></i> Visão geral</button>
+        <button class="control-nav" data-view="tenants"><i data-lucide="building-2"></i> Tenants <b id="nav-tenant-count">0</b></button>
+        <button class="control-nav" data-view="audit"><i data-lucide="history"></i> Auditoria</button>
+        <button class="control-nav" data-view="admins"><i data-lucide="users-round"></i> Administradores</button>
+        <span class="nav-caption spaced">OPERAÇÃO</span>
+        <button class="control-nav" id="security-open"><i data-lucide="key-round"></i> Segurança</button>
+      </nav>
+      <div class="sidebar-status"><span></span><div><strong>Infraestrutura online</strong><small>Supabase + Vercel</small></div></div>
+      <button class="admin-identity" id="platform-logout"><span class="admin-avatar">PX</span><span><strong id="admin-name">Administrador</strong><small id="admin-email-label">peopleX</small></span><i data-lucide="log-out"></i></button>
+    </aside>
+
+    <main class="control-main">
+      <header class="control-topbar">
+        <div><span class="eyebrow">ADMINISTRAÇÃO DA PLATAFORMA</span><h1 id="view-title">Visão geral</h1></div>
+        <div class="top-actions"><button class="ghost-btn" id="refresh-data"><i data-lucide="refresh-cw"></i> Atualizar</button><button class="primary-btn" id="new-tenant-open"><i data-lucide="plus"></i> Novo tenant</button><button class="primary-btn" id="invite-admin-open" hidden><i data-lucide="user-plus"></i> Convidar admin</button></div>
+      </header>
+
+      <div id="view-overview">
+        <section class="metric-grid">
+          <article class="metric-card"><span class="metric-icon red"><i data-lucide="building-2"></i></span><div><small>Tenants ativos</small><strong id="metric-tenants">—</strong><em id="metric-tenants-total">— cadastrados</em></div></article>
+          <article class="metric-card"><span class="metric-icon rose"><i data-lucide="users"></i></span><div><small>Usuários ativos</small><strong id="metric-users">—</strong><em>em toda a plataforma</em></div></article>
+          <article class="metric-card"><span class="metric-icon coral"><i data-lucide="messages-square"></i></span><div><small>Mensagens em 30 dias</small><strong id="metric-messages">—</strong><em>volume processado</em></div></article>
+          <article class="metric-card"><span class="metric-icon wine"><i data-lucide="hard-drive"></i></span><div><small>Armazenamento</small><strong id="metric-storage">—</strong><em>documentos registrados</em></div></article>
+        </section>
+
+        <div class="overview-grid">
+          <section class="tenants-panel">
+            <header class="panel-head"><div><h2>Atividade recente</h2><p>Últimas ações administrativas</p></div><button class="panel-link" id="overview-view-audit">Ver tudo</button></header>
+            <div class="activity-list" id="overview-activity"><p class="panel-empty">Carregando…</p></div>
+          </section>
+          <section class="tenants-panel">
+            <header class="panel-head"><div><h2>Tenants recentes</h2><p>Últimas empresas provisionadas</p></div><button class="panel-link" id="overview-view-tenants">Ver tudo</button></header>
+            <div class="activity-list" id="overview-recent-tenants"><p class="panel-empty">Carregando…</p></div>
+          </section>
+        </div>
+      </div>
+
+      <div id="view-tenants" hidden>
+        <section class="tenants-panel">
+          <header class="panel-head"><div><h2>Tenants</h2><p>Planos, utilização e controles por empresa</p></div><label class="search-box"><i data-lucide="search"></i><input id="tenant-search" placeholder="Buscar empresa ou slug"></label></header>
+          <div class="table-wrap"><table><thead><tr><th>Empresa</th><th>Plano</th><th>Usuários</th><th>Uso em 30 dias</th><th>Armazenamento</th><th>Status</th><th></th></tr></thead><tbody id="tenant-table"></tbody></table></div>
+          <div class="empty-state" id="empty-state" hidden><i data-lucide="building-2"></i><h3>Nenhum tenant encontrado</h3><p>Crie a primeira empresa ou ajuste sua busca.</p></div>
+        </section>
+      </div>
+
+      <div id="view-audit" hidden>
+        <section class="tenants-panel">
+          <header class="panel-head"><div><h2>Auditoria</h2><p>Histórico de ações administrativas na plataforma</p></div><label class="search-box"><i data-lucide="search"></i><input id="audit-search" placeholder="Buscar ação, admin ou tenant"></label></header>
+          <div class="table-wrap"><table><thead><tr><th>Quando</th><th>Ação</th><th>Administrador</th><th>Tenant</th><th>IP</th><th></th></tr></thead><tbody id="audit-table"></tbody></table></div>
+          <div class="empty-state" id="audit-empty" hidden><i data-lucide="history"></i><h3>Nenhum registro ainda</h3><p>Ações administrativas vão aparecer aqui.</p></div>
+        </section>
+      </div>
+
+      <div id="view-admins" hidden>
+        <section class="tenants-panel">
+          <header class="panel-head"><div><h2>Administradores</h2><p>Quem tem acesso ao Control Center</p></div></header>
+          <div class="table-wrap"><table><thead><tr><th>Administrador</th><th>Último acesso</th><th>Status</th><th></th></tr></thead><tbody id="admins-table"></tbody></table></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="overlay" id="create-overlay" hidden>
+    <section class="modal-card large">
+      <button class="close-btn" data-close="create-overlay"><i data-lucide="x"></i></button>
+      <span class="eyebrow">NOVO TENANT</span><h2>Criar empresa</h2><p>A empresa será provisionada com banco, módulos e um proprietário.</p>
+      <form id="create-tenant-form">
+        <div class="form-grid"><label>Nome da empresa<input id="tenant-name" required placeholder="Acme Tecnologia"></label><label>Identificador<input id="tenant-slug" required pattern="[a-z0-9-]+" placeholder="acme-tecnologia"><small>Usado no login da equipe</small></label></div>
+        <div class="form-grid"><label>Plano<select id="tenant-plan"><option value="starter">Starter</option><option value="growth" selected>Growth</option><option value="enterprise">Enterprise</option></select></label><label>Limite de usuários<input id="tenant-limit" type="number" min="1" value="50" required></label></div>
+        <div class="section-divider"><span>Administrador da empresa</span></div>
+        <div class="form-grid"><label>Nome completo<input id="tenant-admin-name" required placeholder="Nome do responsável"></label><label>E-mail<input id="tenant-admin-email" type="email" required placeholder="admin@example.invalid"></label></div>
+        <label>Senha inicial<input id="tenant-admin-password" type="password" minlength="12" required placeholder="Mínimo de 12 caracteres"><small>Envie por um canal seguro e solicite a troca no primeiro acesso.</small></label>
+        <div class="modal-actions"><button type="button" class="ghost-btn" data-close="create-overlay">Cancelar</button><button type="submit" class="primary-btn" id="create-tenant-submit">Criar tenant</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="drawer-overlay" id="tenant-drawer" hidden>
+    <section class="drawer">
+      <button class="close-btn" data-close="tenant-drawer"><i data-lucide="x"></i></button>
+      <span class="eyebrow">CONFIGURAÇÃO DO TENANT</span><h2 id="drawer-name">Empresa</h2><p id="drawer-slug">empresa</p>
+      <div class="usage-summary"><div><small>Usuários ativos</small><strong id="drawer-users">0 / 0</strong></div><div><small>Mensagens 30d</small><strong id="drawer-messages">0</strong></div></div>
+      <form id="tenant-settings-form">
+        <div class="form-grid"><label>Plano<select id="drawer-plan"><option value="starter">Starter</option><option value="growth">Growth</option><option value="enterprise">Enterprise</option></select></label><label>Limite de usuários<input id="drawer-limit" type="number" min="1"></label></div>
+        <div class="section-divider"><span>Funcionalidades habilitadas</span></div>
+        <div class="feature-list" id="feature-list"></div>
+        <label class="status-control"><span><strong>Tenant ativo</strong><small>Ao suspender, todos os acessos são bloqueados.</small></span><input type="checkbox" id="drawer-active"><i></i></label>
+        <div class="modal-actions"><button type="button" class="ghost-btn" data-close="tenant-drawer">Cancelar</button><button type="submit" class="primary-btn">Salvar alterações</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="overlay" id="audit-detail-overlay" hidden><section class="modal-card"><button class="close-btn" data-close="audit-detail-overlay"><i data-lucide="x"></i></button><span class="eyebrow" id="audit-detail-action">AÇÃO</span><h2 id="audit-detail-title">Detalhes</h2><p id="audit-detail-meta">—</p><pre class="json-view" id="audit-detail-json"></pre></section></div>
+
+  <div class="overlay" id="invite-admin-overlay" hidden>
+    <section class="modal-card">
+      <button class="close-btn" data-close="invite-admin-overlay"><i data-lucide="x"></i></button>
+      <span class="eyebrow">NOVO ADMINISTRADOR</span><h2>Convidar administrador</h2><p>A pessoa recebe um e-mail pra criar a própria senha — ninguém aqui vê ou define a senha dela.</p>
+      <form id="invite-admin-form">
+        <label>Nome completo<input id="invite-admin-name" required placeholder="Nome do administrador"></label>
+        <label>E-mail<input id="invite-admin-email" type="email" required placeholder="pessoa@example.invalid"></label>
+        <div class="modal-actions"><button type="button" class="ghost-btn" data-close="invite-admin-overlay">Cancelar</button><button type="submit" class="primary-btn" id="invite-admin-submit">Enviar convite</button></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="overlay" id="security-overlay" hidden><section class="modal-card"><button class="close-btn" data-close="security-overlay"><i data-lucide="x"></i></button><span class="eyebrow">SEGURANÇA</span><h2>Alterar senha</h2><p>Use pelo menos 12 caracteres e não reutilize senhas.</p><form id="password-form"><label>Nova senha<input type="password" id="new-admin-password" minlength="12" required></label><label>Confirmar senha<input type="password" id="confirm-admin-password" minlength="12" required></label><div class="modal-actions"><button type="button" class="ghost-btn" data-close="security-overlay">Cancelar</button><button class="primary-btn">Atualizar senha</button></div></form></section></div>
+  <div class="toast-stack" id="admin-toasts"></div>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="/js/admin.js?v=20261106-2"></script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Meu Perfil — peopleX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-btn menu-toggle" id="open-sidebar" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+        <a class="back-link" href="/dashboard.html"><i data-lucide="arrow-left"></i> Dashboard</a>
+      </header>
+
+      <div class="content-area">
+        <div class="page-heading compact">
+          <div><span class="eyebrow">Meus dados</span><h1>Meu perfil</h1><p>Atualize seus dados pessoais e documentos</p></div>
+        </div>
+
+        <div class="profile-grid">
+          <div class="profile-main">
+            <!-- Dados pessoais -->
+            <div class="form-card">
+              <h2>Dados pessoais</h2>
+              <div class="form-grid">
+                <div class="field full">
+                  <label>Nome completo</label>
+                  <input id="name" type="text"/>
+                </div>
+                <div class="field">
+                  <label>E-mail</label>
+                  <input id="email" type="email"/>
+                </div>
+                <div class="field">
+                  <label>Telefone</label>
+                  <input id="phone" type="tel" oninput="mascaraTel(this)"/>
+                </div>
+                <div class="field">
+                  <label>RG</label>
+                  <input id="rg" type="text" class="mono"/>
+                </div>
+                <div class="field">
+                  <label>Data de nascimento</label>
+                  <input id="birth_date" type="date"/>
+                </div>
+                <div class="field full">
+                  <label>Senha atual <span class="opt">(obrigatória somente para alterar o e-mail)</span></label>
+                  <input id="profile-current-password" type="password" autocomplete="current-password"/>
+                </div>
+              </div>
+              <button onclick="salvar()" class="btn primary" style="margin-top:18px;">Salvar dados</button>
+            </div>
+
+            <!-- Documentos -->
+            <div class="form-card">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+                <h2 style="margin:0;">Documentos</h2>
+                <span style="color:#a0aca8;font-size:9px;">JPG, PNG ou PDF · máx. 5MB</span>
+              </div>
+
+              <div class="doc-grid">
+                <div id="dz-rg_frente" data-type="rg_frente">
+                  <div class="doc-drop" onclick="document.getElementById('fi-rg_frente').click()"
+                    ondragover="dOver(event,this)" ondragleave="dLeave(this)" ondrop="dDrop(event,'rg_frente',this)">
+                    <div class="doc-icon"><i data-lucide="file-text"></i></div>
+                    <p>RG — Frente</p>
+                    <small id="lbl-rg_frente">Clique ou arraste</small>
+                  </div>
+                  <input id="fi-rg_frente" type="file" accept=".jpg,.jpeg,.png,.pdf" hidden onchange="docSel('rg_frente',this)"/>
+                </div>
+
+                <div id="dz-rg_verso" data-type="rg_verso">
+                  <div class="doc-drop" onclick="document.getElementById('fi-rg_verso').click()"
+                    ondragover="dOver(event,this)" ondragleave="dLeave(this)" ondrop="dDrop(event,'rg_verso',this)">
+                    <div class="doc-icon"><i data-lucide="file-text"></i></div>
+                    <p>RG — Verso</p>
+                    <small id="lbl-rg_verso">Clique ou arraste</small>
+                  </div>
+                  <input id="fi-rg_verso" type="file" accept=".jpg,.jpeg,.png,.pdf" hidden onchange="docSel('rg_verso',this)"/>
+                </div>
+
+                <div id="dz-cpf" data-type="cpf">
+                  <div class="doc-drop" onclick="document.getElementById('fi-cpf').click()"
+                    ondragover="dOver(event,this)" ondragleave="dLeave(this)" ondrop="dDrop(event,'cpf',this)">
+                    <div class="doc-icon"><i data-lucide="credit-card"></i></div>
+                    <p>CPF</p>
+                    <small id="lbl-cpf">Clique ou arraste</small>
+                  </div>
+                  <input id="fi-cpf" type="file" accept=".jpg,.jpeg,.png,.pdf" hidden onchange="docSel('cpf',this)"/>
+                </div>
+
+                <div id="dz-comprovante_residencia" data-type="comprovante_residencia">
+                  <div class="doc-drop" onclick="document.getElementById('fi-comprovante_residencia').click()"
+                    ondragover="dOver(event,this)" ondragleave="dLeave(this)" ondrop="dDrop(event,'comprovante_residencia',this)">
+                    <div class="doc-icon"><i data-lucide="home"></i></div>
+                    <p>Comprovante</p>
+                    <small id="lbl-comprovante_residencia">Clique ou arraste</small>
+                  </div>
+                  <input id="fi-comprovante_residencia" type="file" accept=".jpg,.jpeg,.png,.pdf" hidden onchange="docSel('comprovante_residencia',this)"/>
+                </div>
+              </div>
+
+              <div>
+                <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#52615d;">Documentos enviados</p>
+                <div id="docs-lista"><p class="empty-note">Carregando…</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-side">
+            <!-- Foto -->
+            <div class="form-card">
+              <h2>Foto de perfil</h2>
+              <div class="avatar-uploader">
+                <div class="avatar-frame">
+                  <div class="avatar-photo">
+                    <img id="foto-img" src="" alt="Foto" hidden/>
+                    <span id="ini">?</span>
+                  </div>
+                  <label for="input-foto" class="avatar-edit" aria-label="Trocar foto"><i data-lucide="camera"></i></label>
+                  <input id="input-foto" type="file" accept="image/jpeg,image/png" hidden onchange="prevFoto(this)"/>
+                </div>
+                <div class="avatar-meta">
+                  <strong id="p-nome">Carregando…</strong>
+                  <p id="p-email"></p>
+                  <p id="p-emp"></p>
+                  <button id="btn-foto" onclick="uploadFoto()" disabled class="btn primary" style="height:32px;padding:0 14px;margin-top:10px;">Salvar foto</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Alterar senha -->
+            <div class="form-card">
+              <h2>Alterar senha</h2>
+              <div class="form-grid" style="grid-template-columns:1fr;">
+                <div class="field full">
+                  <label>Senha atual</label>
+                  <input id="cur-pw" type="password" placeholder="••••••••"/>
+                </div>
+                <div class="field full">
+                  <label>Nova senha</label>
+                  <input id="new-pw" type="password" placeholder="Mín. 8 caracteres"/>
+                </div>
+                <div class="field full">
+                  <label>Confirmar</label>
+                  <input id="conf-pw" type="password" placeholder="Repita a nova senha"/>
+                </div>
+              </div>
+              <button onclick="alterarSenha()" class="btn dark" style="margin-top:16px;">Alterar senha</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+  // Carrega perfil
+  async function init() {
+    const r = await Users.perfil();
+    if (!r?.ok) return;
+    const d = r.data;
+    document.getElementById('name').value       = d.name || '';
+    document.getElementById('email').value      = d.email || '';
+    document.getElementById('phone').value      = d.phone || '';
+    document.getElementById('rg').value         = d.rg || '';
+    document.getElementById('birth_date').value = d.birth_date ? d.birth_date.split('T')[0] : '';
+    document.getElementById('p-nome').textContent  = d.name;
+    document.getElementById('p-email').textContent = d.email;
+    document.getElementById('p-emp').textContent   = d.empresa || '';
+    document.getElementById('ini').textContent     = d.name?.[0]?.toUpperCase() || '?';
+    if (d.photo_url) setFotoPreview(d.photo_url);
+    atualizarAvatarSidebar(d.photo_url);
+    renderDocs(d.documentos || []);
+  }
+  init();
+
+  // Foto
+  function setFotoPreview(src) {
+    const img = document.getElementById('foto-img');
+    img.src = src; img.hidden = false;
+    document.getElementById('ini').hidden = true;
+  }
+  function prevFoto(input) {
+    if (!input.files[0]) return;
+    const r = new FileReader();
+    r.onload = e => { setFotoPreview(e.target.result); document.getElementById('btn-foto').disabled = false; };
+    r.readAsDataURL(input.files[0]);
+  }
+  async function uploadFoto() {
+    const input = document.getElementById('input-foto');
+    if (!input.files[0]) return;
+    const fd = new FormData(); fd.append('foto', input.files[0]);
+    const r = await Users.uploadFoto(fd);
+    if (r?.ok) { showToast('Foto atualizada!', 'success'); atualizarAvatarSidebar(r.data.photo_url); }
+    else showToast('Erro ao enviar foto.', 'error');
+  }
+
+  // Salvar dados pessoais
+  async function salvar() {
+    const body = {
+      name:       document.getElementById('name').value.trim(),
+      email:      document.getElementById('email').value.trim(),
+      phone:      document.getElementById('phone').value,
+      rg:         document.getElementById('rg').value,
+      birth_date: document.getElementById('birth_date').value,
+      currentPassword: document.getElementById('profile-current-password').value,
+    };
+    const r = await Users.atualizarPerfil(body);
+    if (r?.ok) {
+      showToast('Dados salvos!', 'success');
+      document.getElementById('p-nome').textContent  = r.data.name;
+      document.getElementById('p-email').textContent = r.data.email;
+      document.getElementById('profile-current-password').value = '';
+      atualizarIdentidade({ name: r.data.name, email: r.data.email });
+    } else showToast(r?.data?.error || 'Erro ao salvar.', 'error');
+  }
+
+  // Alterar senha
+  async function alterarSenha() {
+    const cur  = document.getElementById('cur-pw').value;
+    const novo = document.getElementById('new-pw').value;
+    const conf = document.getElementById('conf-pw').value;
+    if (!cur || !novo) { showToast('Preencha a senha atual e a nova.', 'error'); return; }
+    if (novo !== conf) { showToast('As novas senhas não conferem.', 'error'); return; }
+    if (novo.length < 8) { showToast('Mín. 8 caracteres.', 'error'); return; }
+    const r = await Users.atualizarPerfil({ currentPassword: cur, newPassword: novo });
+    if (r?.ok) {
+      showToast('Senha alterada!', 'success');
+      ['cur-pw','new-pw','conf-pw'].forEach(id => document.getElementById(id).value = '');
+    } else showToast(r?.data?.error || 'Erro.', 'error');
+  }
+
+  // Drag-and-drop de documentos
+  function dOver(e, z)  { e.preventDefault(); z.classList.add('over'); }
+  function dLeave(z)    { z.classList.remove('over'); }
+  function dDrop(e, t, z) { e.preventDefault(); z.classList.remove('over'); if (e.dataTransfer.files[0]) enviarDoc(t, e.dataTransfer.files[0]); }
+  function docSel(t, input) { if (input.files[0]) enviarDoc(t, input.files[0]); }
+
+  async function enviarDoc(tipo, file) {
+    if (file.size > 5*1024*1024) { showToast('Arquivo maior que 5MB.', 'error'); return; }
+    const lbl = document.getElementById(`lbl-${tipo}`);
+    lbl.textContent = 'Enviando…'; lbl.style.color = '#c9951f';
+    const fd = new FormData(); fd.append('documento', file); fd.append('type', tipo);
+    const r = await Users.uploadDocumento(fd);
+    if (r?.ok) {
+      lbl.textContent = '✓ Enviado'; lbl.style.color = '#168372'; lbl.style.fontWeight = '700';
+      showToast('Documento enviado!', 'success');
+      const dr = await Users.listarDocumentos();
+      if (dr?.ok) renderDocs(dr.data);
+    } else {
+      lbl.textContent = 'Erro ao enviar'; lbl.style.color = 'var(--rose)';
+      showToast(r?.data?.error || 'Erro ao enviar.', 'error');
+    }
+  }
+
+  function renderDocs(docs) {
+    const el = document.getElementById('docs-lista');
+    if (!docs.length) { el.innerHTML = '<p class="empty-note">Nenhum documento enviado.</p>'; return; }
+    const nomes = { rg_frente:'RG — Frente', rg_verso:'RG — Verso', cpf:'CPF', comprovante_residencia:'Comprovante de residência' };
+    el.innerHTML = docs.map(d => `
+      <div class="doc-list-row">
+        <div>
+          <strong>${nomes[d.type]||d.type}</strong>
+          <small>${new Date(d.created_at).toLocaleDateString('pt-BR')}</small>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="doc-tag">Armazenado</span>
+          <a href="${d.file_url}" target="_blank" class="doc-link">Ver</a>
+        </div>
+      </div>`).join('');
+  }
+
+  // Máscara
+  function mascaraTel(i) {
+    let v=i.value.replace(/\D/g,'').slice(0,11);
+    if(v.length>10) v=v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+    else if(v.length>6) v=v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+    else if(v.length>2) v=v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+    i.value=v;
+  }
+</script>
+</body>
+</html>

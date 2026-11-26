@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admissão — peopleX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-btn menu-toggle" id="open-sidebar" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+        <a class="back-link" href="/dashboard.html"><i data-lucide="arrow-left"></i> Dashboard</a>
+      </header>
+
+      <div class="content-area">
+        <div class="page-heading compact">
+          <div><span class="eyebrow">Novo colaborador</span><h1>Cadastrar funcionário</h1><p>Adicione um novo membro à equipe</p></div>
+        </div>
+
+        <div class="side-grid">
+          <!-- Dados pessoais -->
+          <div class="form-card">
+            <h2><span class="step-badge">1</span> Dados pessoais</h2>
+            <div class="form-grid">
+              <div class="field full">
+                <label>Nome completo *</label>
+                <input id="name" type="text" placeholder="Maria da Silva"/>
+              </div>
+              <div class="field">
+                <label>E-mail *</label>
+                <input id="email" type="email" placeholder="maria@example.invalid"/>
+              </div>
+              <div class="field">
+                <label>Telefone</label>
+                <input id="phone" type="tel" placeholder="(11) 99999-9999" oninput="mascaraTel(this)"/>
+              </div>
+              <div class="field">
+                <label>CPF</label>
+                <input id="cpf" type="text" class="mono" placeholder="000.000.000-00" oninput="mascaraCPF(this)" maxlength="14"/>
+                <span id="cpf-ico" class="field-icon" hidden></span>
+                <p id="cpf-msg" class="field-msg" hidden></p>
+              </div>
+              <div class="field">
+                <label>Grupo de acesso</label>
+                <select id="access-group">
+                  <option value="">Nenhum (padrão)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack-column">
+            <!-- Acesso -->
+            <div class="form-card">
+              <h2><span class="step-badge">2</span> Acesso ao sistema</h2>
+              <div class="form-grid" style="grid-template-columns:1fr;">
+                <div class="field">
+                  <label>Senha inicial *</label>
+                  <input id="password" type="password" placeholder="Mín. 8 caracteres" oninput="forcaSenha(this.value)"/>
+                  <div class="strength-bars"><i id="b1"></i><i id="b2"></i><i id="b3"></i><i id="b4"></i></div>
+                  <p id="forca-txt" class="strength-text">Digite uma senha</p>
+                </div>
+                <div class="field">
+                  <label>Confirmar senha *</label>
+                  <input id="confirm" type="password" placeholder="Repita a senha" oninput="checaConfirm()"/>
+                  <p id="confirm-msg" class="field-msg" hidden></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Funcionalidades -->
+            <div class="form-card">
+              <h2><span class="step-badge">3</span> Funcionalidades</h2>
+              <p class="hint">Desmarque o que essa pessoa não deve ver. Tudo começa marcado; isso não amplia o que a empresa já permite, só restringe.</p>
+              <div id="onboarding-features" class="form-grid" style="grid-template-columns:1fr;gap:8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ações -->
+        <div class="form-actions" style="max-width:1100px;">
+          <a href="/dashboard.html" class="btn secondary" style="flex:1;">Cancelar</a>
+          <button id="btn-cad" onclick="cadastrar()" class="btn primary" style="flex:1;">Cadastrar funcionário</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+  exigirAuth();
+  let meuTeto = {};
+
+  (async () => {
+    if (!isAdmin()) {
+      const overview = await Dashboard.overview();
+      if (!overview?.ok || !overview.data.permissions?.users?.create) {
+        window.location.href = '/dashboard.html';
+        return;
+      }
+      meuTeto = overview.data.permissions;
+    }
+    carregarGrupos();
+  })();
+
+  // Verdadeiro se um grupo concede alguma permissão que eu mesmo não tenho
+  // -- usado pra não deixar atribuir, na admissão, um grupo mais poderoso
+  // que o do próprio colaborador que está cadastrando.
+  function excedeTeto(permissoesAlvo) {
+    if (isAdmin()) return false;
+    for (const recurso of Object.keys(permissoesAlvo || {})) {
+      for (const acao of Object.keys(permissoesAlvo[recurso] || {})) {
+        if (permissoesAlvo[recurso][acao] === true && !meuTeto[recurso]?.[acao]) return true;
+      }
+    }
+    return false;
+  }
+
+  async function carregarGrupos() {
+    const r = await AccessGroups.listar();
+    if (!r?.ok) return;
+    const select = document.getElementById('access-group');
+    const grupos = isAdmin() ? r.data : r.data.filter(g => !excedeTeto(g.permissions));
+    select.innerHTML += grupos.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
+  }
+
+  const FEATURE_LABELS = {
+    messaging: 'Mensageria',
+    requests: 'Solicitações',
+    notices: 'Comunicados',
+    analytics: 'Indicadores',
+    documents: 'Arquivos do colaborador',
+    onboarding: 'Admissão',
+    email_broadcast: 'E-mail em massa',
+  };
+  document.getElementById('onboarding-features').innerHTML = Object.entries(FEATURE_LABELS).map(([key, label]) =>
+    `<label class="check-row"><input type="checkbox" data-feature-key="${key}" checked> ${esc(label)}</label>`
+  ).join('');
+
+  // Máscaras
+  function mascaraTel(i) {
+    let v = i.value.replace(/\D/g,'').slice(0,11);
+    if(v.length>10) v=v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+    else if(v.length>6) v=v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+    else if(v.length>2) v=v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+    i.value=v;
+  }
+  function mascaraCPF(i) {
+    let v=i.value.replace(/\D/g,'').slice(0,11);
+    v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+    i.value=v;
+    if(v.length===14) validaCPF(v);
+  }
+
+  // CPF inline validation
+  function validaCPF(cpf) {
+    const n=cpf.replace(/\D/g,'');
+    let s=0; for(let i=0;i<9;i++) s+=parseInt(n[i])*(10-i);
+    let r=(s*10)%11; if(r===10||r===11) r=0;
+    let ok=r===parseInt(n[9]);
+    s=0; for(let i=0;i<10;i++) s+=parseInt(n[i])*(11-i);
+    r=(s*10)%11; if(r===10||r===11) r=0;
+    ok=ok&&r===parseInt(n[10]);
+    const ico=document.getElementById('cpf-ico');
+    const msg=document.getElementById('cpf-msg');
+    ico.hidden = false; msg.hidden = false;
+    if(ok){ ico.textContent='✓'; ico.style.color='#168372';
+            msg.textContent='CPF válido'; msg.className='field-msg ok'; }
+    else  { ico.textContent='✗'; ico.style.color='var(--rose)';
+            msg.textContent='CPF inválido'; msg.className='field-msg error'; }
+  }
+
+  // Força da senha
+  function forcaSenha(v) {
+    let f=0;
+    if(v.length>=8) f++; if(/[A-Z]/.test(v)) f++; if(/[0-9]/.test(v)) f++; if(/[^A-Za-z0-9]/.test(v)) f++;
+    const cor=['','#ef4444','#f97316','#eab308','#22c55e'];
+    const lbl=['','Fraca','Razoável','Boa','Forte'];
+    for(let i=1;i<=4;i++) document.getElementById(`b${i}`).style.background=i<=f?cor[f]:'#e6ece9';
+    const t=document.getElementById('forca-txt');
+    t.textContent=v?lbl[f]:'Digite uma senha'; t.style.color=cor[f]||'#a0aca8';
+  }
+  function checaConfirm() {
+    const s=document.getElementById('password').value;
+    const c=document.getElementById('confirm').value;
+    const m=document.getElementById('confirm-msg');
+    m.hidden = false;
+    if(s===c){ m.textContent='✓ Senhas conferem'; m.className='field-msg ok'; }
+    else     { m.textContent='✗ Não conferem';    m.className='field-msg error'; }
+  }
+
+  // Cadastrar
+  async function cadastrar() {
+    const name=document.getElementById('name').value.trim();
+    const email=document.getElementById('email').value.trim();
+    const password=document.getElementById('password').value;
+    const confirm=document.getElementById('confirm').value;
+    const access_group_id=document.getElementById('access-group').value || null;
+    const phone=document.getElementById('phone').value;
+    const cpf=document.getElementById('cpf').value;
+    const features=Object.fromEntries([...document.querySelectorAll('#onboarding-features [data-feature-key]')].map(i=>[i.dataset.featureKey,i.checked]));
+
+    if(!name||!email||!password){ showToast('Preencha nome, e-mail e senha.','error'); return; }
+    if(password!==confirm){ showToast('As senhas não conferem.','error'); return; }
+    if(password.length<8){ showToast('Senha deve ter mínimo 8 caracteres.','error'); return; }
+
+    const btn=document.getElementById('btn-cad');
+    btn.textContent='Cadastrando…'; btn.disabled=true;
+
+    const r=await Users.cadastrar({name,email,password,access_group_id,phone,cpf,features});
+    if(r?.ok){ showToast(`✓ ${r.data.name} cadastrado!`,'success'); document.querySelectorAll('input,select').forEach(i=>{ if(i.type!=='submit'&&i.type!=='checkbox') i.value=''; }); forcaSenha(''); }
+    else showToast(r?.data?.error||'Erro ao cadastrar.','error');
+
+    btn.textContent='Cadastrar funcionário'; btn.disabled=false;
+  }
+</script>
+</body>
+</html>

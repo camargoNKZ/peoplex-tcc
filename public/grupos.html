@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grupos de acesso — peopleX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-btn menu-toggle" id="open-sidebar" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+        <a class="back-link" href="/dashboard.html"><i data-lucide="arrow-left"></i> Dashboard</a>
+      </header>
+
+      <div class="content-area">
+        <div class="page-heading compact">
+          <div><span class="eyebrow">Permissões</span><h1>Grupos de acesso</h1><p>Controle o que cada grupo pode ver e fazer em cada área</p></div>
+          <button class="btn primary" onclick="abrirNovo()"><i data-lucide="plus"></i> Novo grupo</button>
+        </div>
+
+        <div class="list-detail-grid">
+          <div id="grupos-lista" class="record-list"></div>
+
+          <div id="editor-empty" class="detail-empty">
+            <i data-lucide="shield-check"></i>
+            <p>Clique em "Novo grupo" ou em "Editar" num grupo da lista pra ver o formulário aqui.</p>
+          </div>
+
+          <!-- Editor -->
+          <div id="editor" class="form-card" hidden>
+            <h2 id="editor-titulo">Novo grupo</h2>
+
+            <div class="field full" style="margin-bottom:18px;">
+              <label>Nome do grupo</label>
+              <input id="g-nome" type="text" placeholder="Ex.: Financeiro, Estágio"/>
+            </div>
+
+            <div id="g-permissoes" class="permission-columns"></div>
+
+            <div class="form-actions" style="margin-top:20px;">
+              <button onclick="fecharEditor()" class="btn secondary">Cancelar</button>
+              <button id="g-salvar" onclick="salvarGrupo()" class="btn primary">Salvar grupo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+  exigirAuth();
+
+  // Mesmo padrão de src/policies/permissions.js -- se mudar lá, muda aqui.
+  const RESOURCES = {
+    requests: {
+      label: 'Solicitações',
+      actions: { view_all: 'Ver de todo mundo (não só as próprias)', create: 'Criar', edit: 'Editar', delete: 'Excluir', approve: 'Aprovar/rejeitar/analisar' },
+      defaults: { view_all: false, create: true, edit: true, delete: true, approve: false },
+    },
+    notices: {
+      label: 'Comunicados',
+      actions: { create: 'Criar', edit: 'Editar', delete: 'Excluir' },
+      defaults: { create: false, edit: false, delete: false },
+    },
+    request_types: {
+      label: 'Tipos de solicitação',
+      actions: { create: 'Cadastrar novo tipo', edit: 'Editar tipo existente', delete: 'Desativar tipo' },
+      defaults: { create: false, edit: false, delete: false },
+    },
+    access_groups: {
+      label: 'Grupos de acesso',
+      actions: { create: 'Criar grupo de acesso' },
+      defaults: { create: false },
+    },
+    users: {
+      label: 'Pessoas',
+      actions: { create: 'Cadastrar colaborador (admissão)' },
+      defaults: { create: false },
+    },
+  };
+
+  let grupos = [];
+  let editandoId = null;
+  let souDono = false;
+  let meuTeto = {};
+
+  (async () => {
+    souDono = isAdmin();
+    if (!souDono) {
+      const overview = await Dashboard.overview();
+      if (!overview?.ok || !overview.data.permissions?.access_groups?.create) {
+        window.location.href = '/dashboard.html';
+        return;
+      }
+      meuTeto = overview.data.permissions;
+    }
+    carregar();
+  })();
+
+  // Verdadeiro se um conjunto de permissões concede algo além do meu teto
+  // -- impede que eu crie um grupo mais poderoso do que eu mesmo sou.
+  function excedeTeto(permissoesAlvo) {
+    if (souDono) return false;
+    for (const recurso of Object.keys(permissoesAlvo || {})) {
+      for (const acao of Object.keys(permissoesAlvo[recurso] || {})) {
+        if (permissoesAlvo[recurso][acao] === true && !meuTeto[recurso]?.[acao]) return true;
+      }
+    }
+    return false;
+  }
+
+  async function carregar() {
+    const r = await AccessGroups.listar();
+    if (!r?.ok) return showToast('Não foi possível carregar os grupos.', 'error');
+    grupos = r.data;
+    renderLista();
+  }
+
+  function renderLista() {
+    const lista = document.getElementById('grupos-lista');
+    if (!grupos.length) {
+      lista.innerHTML = `<p class="empty-note">Nenhum grupo criado ainda. Sem grupo, todo colaborador usa o padrão (só vê e mexe nas próprias solicitações, não cria comunicados).</p>`;
+      return;
+    }
+    lista.innerHTML = grupos.map(g => {
+      const resumo = Object.entries(RESOURCES).flatMap(([key, meta]) =>
+        Object.entries(meta.actions)
+          .filter(([action]) => (g.permissions[key] || {})[action] === true)
+          .map(([action]) => `${meta.label}: ${meta.actions[action]}`)
+      );
+      return `<article class="record-card">
+        <div>
+          <strong>${esc(g.name)}</strong><span class="muted-tag">${g.membros} ${g.membros === 1 ? 'pessoa' : 'pessoas'}</span>
+          <p>${resumo.length ? esc(resumo.join(' · ')) : 'Nenhuma permissão extra liberada (só o padrão)'}</p>
+        </div>
+        <div class="record-actions">
+          ${souDono ? `<button onclick="abrirEdicao(${g.id})" class="link-btn">Editar</button>
+          <button onclick="excluirGrupo(${g.id})" class="link-btn muted">Excluir</button>` : ''}
+        </div>
+      </article>`;
+    }).join('');
+  }
+
+  function renderPermissoes(valores = {}) {
+    document.getElementById('g-permissoes').innerHTML = Object.entries(RESOURCES).map(([key, meta]) => `
+      <div class="permission-group">
+        <p>${meta.label}</p>
+        ${Object.entries(meta.actions).map(([action, label]) => {
+          const atual = valores[key]?.[action] ?? meta.defaults[action];
+          const foraDoTeto = !souDono && !meuTeto[key]?.[action];
+          return `<label class="permission-row${foraDoTeto ? ' disabled' : ''}">
+            <input type="checkbox" data-resource="${key}" data-action="${action}" ${atual && !foraDoTeto ? 'checked' : ''} ${foraDoTeto ? 'disabled' : ''}>
+            ${esc(label)} <small>(padrão: ${meta.defaults[action] ? 'liberado' : 'bloqueado'}${foraDoTeto ? ' · você não tem essa permissão' : ''})</small>
+          </label>`;
+        }).join('')}
+      </div>`
+    ).join('');
+  }
+
+  function abrirNovo() {
+    editandoId = null;
+    document.getElementById('editor-titulo').textContent = 'Novo grupo';
+    document.getElementById('g-nome').value = '';
+    renderPermissoes({});
+    document.getElementById('editor').hidden = false;
+    document.getElementById('editor-empty').hidden = true;
+  }
+
+  function abrirEdicao(id) {
+    const g = grupos.find(item => item.id === id);
+    if (!g) return;
+    editandoId = id;
+    document.getElementById('editor-titulo').textContent = `Editar "${g.name}"`;
+    document.getElementById('g-nome').value = g.name;
+    renderPermissoes(g.permissions);
+    document.getElementById('editor').hidden = false;
+    document.getElementById('editor-empty').hidden = true;
+  }
+
+  function fecharEditor() {
+    document.getElementById('editor').hidden = true;
+    document.getElementById('editor-empty').hidden = false;
+  }
+
+  function coletarPermissoes() {
+    const out = {};
+    document.querySelectorAll('#g-permissoes input[type=checkbox]').forEach(input => {
+      const resource = input.dataset.resource;
+      out[resource] = out[resource] || {};
+      out[resource][input.dataset.action] = input.checked;
+    });
+    return out;
+  }
+
+  async function salvarGrupo() {
+    const name = document.getElementById('g-nome').value.trim();
+    if (!name) return showToast('Dê um nome para o grupo.', 'error');
+    const permissions = coletarPermissoes();
+
+    const btn = document.getElementById('g-salvar');
+    btn.textContent = 'Salvando…'; btn.disabled = true;
+
+    const r = editandoId
+      ? await AccessGroups.atualizar(editandoId, { name, permissions })
+      : await AccessGroups.criar({ name, permissions });
+
+    btn.textContent = 'Salvar grupo'; btn.disabled = false;
+
+    if (!r?.ok) return showToast(r?.data?.error || 'Não foi possível salvar o grupo.', 'error');
+    showToast(`Grupo "${name}" salvo.`, 'success');
+    fecharEditor();
+    carregar();
+  }
+
+  async function excluirGrupo(id) {
+    const g = grupos.find(item => item.id === id);
+    if (!g) return;
+    if (!window.confirm(`Excluir o grupo "${g.name}"? ${g.membros > 0 ? `As ${g.membros} pessoas nele voltam ao padrão (sem grupo).` : ''}`)) return;
+    const r = await AccessGroups.excluir(id);
+    if (!r?.ok) return showToast(r?.data?.error || 'Não foi possível excluir o grupo.', 'error');
+    showToast(`Grupo "${g.name}" excluído.`, 'success');
+    carregar();
+  }
+</script>
+</body>
+</html>

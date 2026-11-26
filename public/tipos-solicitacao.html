@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tipos de solicitação — peopleX</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-btn menu-toggle" id="open-sidebar" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+        <a class="back-link" href="/dashboard.html"><i data-lucide="arrow-left"></i> Dashboard</a>
+      </header>
+
+      <div class="content-area">
+        <div class="page-heading compact">
+          <div><span class="eyebrow">Solicitações</span><h1>Tipos de solicitação</h1><p>O que aparece pra escolher em "Nova solicitação", com o SLA e a regra de anexo de cada um</p></div>
+          <button id="btn-abrir-novo" onclick="abrirNovo()" hidden class="btn primary"><i data-lucide="plus"></i> Novo tipo</button>
+        </div>
+
+        <div class="list-detail-grid">
+          <div id="tipos-lista" class="record-list"></div>
+
+          <div id="editor-empty" class="detail-empty">
+            <i data-lucide="list-checks"></i>
+            <p>Clique em "Novo tipo" ou em "Editar" num tipo da lista pra ver o formulário aqui.</p>
+          </div>
+
+          <!-- Editor -->
+          <div id="editor" class="form-card" hidden>
+            <h2 id="editor-titulo">Novo tipo</h2>
+
+            <div class="field full" style="margin-bottom:14px;">
+              <label>Nome</label>
+              <input id="t-nome" type="text" placeholder="Ex.: Abono de falta"/>
+            </div>
+
+            <div class="field full" style="margin-bottom:14px;">
+              <label>Descrição <span class="opt">(opcional)</span></label>
+              <textarea id="t-descricao" rows="2" placeholder="O que o colaborador vê ao escolher esse tipo"></textarea>
+            </div>
+
+            <div class="field full" style="margin-bottom:14px;">
+              <label>SLA (horas até o vencimento)</label>
+              <input id="t-sla" type="number" min="1" step="1" placeholder="Ex.: 72"/>
+            </div>
+
+            <label class="check-row" style="margin-bottom:20px;">
+              <input type="checkbox" id="t-anexo">
+              Anexo obrigatório
+            </label>
+
+            <div class="form-actions">
+              <button onclick="fecharEditor()" class="btn secondary">Cancelar</button>
+              <button id="t-salvar" onclick="salvarTipo()" class="btn primary">Salvar tipo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+  exigirAuth();
+
+  let tipos = [];
+  let editandoId = null;
+  let podeCriar = false, podeEditar = false, podeExcluir = false;
+
+  // Só entra quem tem alguma permissão sobre tipos de solicitação (criar,
+  // editar ou excluir) -- quem não tem nenhuma das três nem precisa ver
+  // essa tela de gestão.
+  (async () => {
+    if (isAdmin()) {
+      podeCriar = podeEditar = podeExcluir = true;
+    } else {
+      const overview = await Dashboard.overview();
+      const perm = overview?.data?.permissions?.request_types || {};
+      if (!overview?.ok || !(perm.create || perm.edit || perm.delete)) {
+        window.location.href = '/dashboard.html';
+        return;
+      }
+      podeCriar = Boolean(perm.create);
+      podeEditar = Boolean(perm.edit);
+      podeExcluir = Boolean(perm.delete);
+    }
+    document.getElementById('btn-abrir-novo').hidden = !podeCriar;
+    carregar();
+  })();
+
+  async function carregar() {
+    const r = await RequestTypes.listarAdmin();
+    if (!r?.ok) {
+      document.getElementById('tipos-lista').innerHTML = `<p class="empty-note" style="color:var(--rose);">${esc(r?.data?.error || 'Não foi possível carregar os tipos de solicitação.')}</p>`;
+      return;
+    }
+    tipos = r.data;
+    renderLista();
+  }
+
+  function renderLista() {
+    const lista = document.getElementById('tipos-lista');
+    if (!tipos.length) {
+      lista.innerHTML = `<p class="empty-note">Nenhum tipo de solicitação cadastrado ainda.</p>`;
+      return;
+    }
+    lista.innerHTML = tipos.map(t => `
+      <article class="record-card${t.active ? '' : ' inactive'}">
+        <div>
+          <strong>${esc(t.name)}${t.active ? '' : '<span class="muted-tag">(inativo)</span>'}</strong>
+          <p>SLA: ${t.sla_hours}h · Anexo obrigatório: ${t.requires_attachment ? 'Sim' : 'Não'}${t.description ? ' · ' + esc(t.description) : ''}</p>
+        </div>
+        <div class="record-actions">
+          ${podeEditar ? `<button onclick="abrirEdicao(${t.id})" class="link-btn">Editar</button>` : ''}
+          ${podeExcluir && t.active ? `<button onclick="excluirTipo(${t.id})" class="link-btn muted">Desativar</button>` : ''}
+          ${podeEditar && !t.active ? `<button onclick="reativarTipo(${t.id})" class="link-btn positive">Reativar</button>` : ''}
+        </div>
+      </article>`
+    ).join('');
+  }
+
+  function abrirNovo() {
+    editandoId = null;
+    document.getElementById('editor-titulo').textContent = 'Novo tipo';
+    document.getElementById('t-nome').value = '';
+    document.getElementById('t-descricao').value = '';
+    document.getElementById('t-sla').value = '72';
+    document.getElementById('t-anexo').checked = false;
+    document.getElementById('editor').hidden = false;
+    document.getElementById('editor-empty').hidden = true;
+  }
+
+  function abrirEdicao(id) {
+    const t = tipos.find(item => item.id === id);
+    if (!t) return;
+    editandoId = id;
+    document.getElementById('editor-titulo').textContent = `Editar "${t.name}"`;
+    document.getElementById('t-nome').value = t.name;
+    document.getElementById('t-descricao').value = t.description || '';
+    document.getElementById('t-sla').value = t.sla_hours;
+    document.getElementById('t-anexo').checked = t.requires_attachment;
+    document.getElementById('editor').hidden = false;
+    document.getElementById('editor-empty').hidden = true;
+  }
+
+  function fecharEditor() {
+    document.getElementById('editor').hidden = true;
+    document.getElementById('editor-empty').hidden = false;
+  }
+
+  async function salvarTipo() {
+    const name = document.getElementById('t-nome').value.trim();
+    const description = document.getElementById('t-descricao').value.trim();
+    const sla_hours = Number(document.getElementById('t-sla').value);
+    const requires_attachment = document.getElementById('t-anexo').checked;
+    if (!name) return showToast('Dê um nome para o tipo de solicitação.', 'error');
+    if (!Number.isInteger(sla_hours) || sla_hours <= 0) return showToast('Informe um SLA válido, em horas.', 'error');
+
+    const btn = document.getElementById('t-salvar');
+    btn.textContent = 'Salvando…'; btn.disabled = true;
+
+    const body = { name, description, sla_hours, requires_attachment };
+    const r = editandoId ? await RequestTypes.atualizar(editandoId, body) : await RequestTypes.criar(body);
+
+    btn.textContent = 'Salvar tipo'; btn.disabled = false;
+
+    if (!r?.ok) return showToast(r?.data?.error || 'Não foi possível salvar o tipo de solicitação.', 'error');
+    showToast(`Tipo "${name}" salvo.`, 'success');
+    fecharEditor();
+    carregar();
+  }
+
+  async function excluirTipo(id) {
+    const t = tipos.find(item => item.id === id);
+    if (!t) return;
+    if (!window.confirm(`Desativar "${t.name}"? Ele some do formulário de nova solicitação, mas o histórico das solicitações já criadas com esse tipo é mantido.`)) return;
+    const r = await RequestTypes.excluir(id);
+    if (!r?.ok) return showToast(r?.data?.error || 'Não foi possível desativar o tipo.', 'error');
+    showToast(`Tipo "${t.name}" desativado.`, 'success');
+    carregar();
+  }
+
+  async function reativarTipo(id) {
+    const t = tipos.find(item => item.id === id);
+    if (!t) return;
+    const r = await RequestTypes.atualizar(id, { active: true });
+    if (!r?.ok) return showToast(r?.data?.error || 'Não foi possível reativar o tipo.', 'error');
+    showToast(`Tipo "${t.name}" reativado.`, 'success');
+    carregar();
+  }
+</script>
+</body>
+</html>

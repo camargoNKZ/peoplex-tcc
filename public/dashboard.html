@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="peopleX — comunicação e gestão de pessoas em um só lugar">
+  <title>peopleX — Central de Pessoas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-row">
+        <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="12" r="6" fill="#fff" fill-opacity=".92"/><circle cx="15" cy="12" r="6" fill="#fff" fill-opacity=".52"/></svg></div>
+        <div><strong>peopleX</strong><span>people operating system</span></div>
+        <button class="icon-btn mobile-close" id="close-sidebar" aria-label="Fechar menu">×</button>
+      </div>
+
+      <div class="workspace-switcher-wrap">
+        <button class="workspace-switcher" type="button" id="open-workspace-menu">
+          <span class="workspace-logo" id="workspace-logo">EA</span>
+          <span><small>Workspace</small><strong id="tenant-name">Empresa Demonstração</strong></span>
+          <i data-lucide="chevrons-up-down"></i>
+        </button>
+        <div class="workspace-menu" id="workspace-menu" hidden></div>
+      </div>
+
+      <nav class="main-nav" aria-label="Navegação principal">
+        <p class="nav-label">Trabalho</p>
+        <button class="nav-item active" data-view="overview"><i data-lucide="layout-dashboard"></i><span>Visão geral</span></button>
+        <button class="nav-item" data-view="messages" data-feature="messaging"><i data-lucide="messages-square"></i><span>Mensagens</span><b class="nav-badge" id="message-badge">4</b></button>
+        <button class="nav-item admin-only" data-view="people"><i data-lucide="users"></i><span>Pessoas</span></button>
+        <button class="nav-item" data-view="requests" data-feature="requests"><i data-lucide="inbox"></i><span>Solicitações</span><b class="nav-count" id="request-badge">8</b></button>
+        <button class="nav-item" data-view="communications" data-feature="notices"><i data-lucide="megaphone"></i><span>Comunicados</span></button>
+
+        <p class="nav-label spaced">Gestão</p>
+        <button class="nav-item" data-view="analytics" data-feature="analytics"><i data-lucide="chart-no-axes-combined"></i><span>Indicadores</span></button>
+        <a class="nav-item" href="/perfil.html" data-protected-link><i data-lucide="folder-lock"></i><span>Meu perfil</span></a>
+        <a class="nav-item" href="/cadastro.html" data-protected-link data-feature="onboarding" data-permission="users.create"><i data-lucide="user-round-plus"></i><span>Admissão</span></a>
+        <a class="nav-item" href="/grupos.html" data-protected-link data-permission="access_groups.create"><i data-lucide="shield-check"></i><span>Grupos de acesso</span></a>
+        <a class="nav-item" href="/tipos-solicitacao.html" data-protected-link data-permission="request_types.create,request_types.edit,request_types.delete"><i data-lucide="list-checks"></i><span>Tipos de solicitação</span></a>
+        <a class="nav-item admin-only" href="/configuracoes.html" data-protected-link><i data-lucide="settings"></i><span>Configurações</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="plan-card">
+          <div><span id="plan-name">Plano</span><strong id="plan-pct">—</strong></div>
+          <div class="progress"><span></span></div>
+          <small id="plan-usage">38 de 50 colaboradores</small>
+        </div>
+        <button class="user-card" type="button" data-profile-link>
+          <span class="avatar avatar-violet" id="side-avatar">AM</span>
+          <span><strong id="side-user">Pessoa Demo 01</strong><small id="side-role">Admin de RH</small></span>
+          <i data-lucide="ellipsis"></i>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <button class="icon-btn menu-toggle" id="open-sidebar" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+        <label class="global-search"><i data-lucide="search"></i><input id="global-search" placeholder="Buscar pessoas, conversas ou solicitações…"><kbd>⌘ K</kbd></label>
+        <div class="top-actions">
+          <span class="demo-chip" id="demo-chip">Demonstração • dados fictícios</span>
+          <div class="chat-more-wrap">
+            <button type="button" class="icon-btn notification-btn" id="open-notif-menu" aria-label="Notificações"><i data-lucide="bell"></i></button>
+            <div class="chat-more-menu notif-menu" id="notif-menu" hidden>
+              <p class="notif-empty">Nenhuma notificação por enquanto.</p>
+            </div>
+          </div>
+          <div class="chat-more-wrap">
+            <button type="button" class="top-profile" id="open-profile-menu"><span class="avatar avatar-violet">AM</span><i data-lucide="chevron-down"></i></button>
+            <div class="chat-more-menu profile-menu" id="profile-menu" hidden>
+              <button type="button" data-profile-link><i data-lucide="user"></i> Meu perfil</button>
+              <button type="button" onclick="logout()"><i data-lucide="log-out"></i> Sair</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <section class="view active" id="view-overview">
+          <div class="page-heading">
+            <div><span class="eyebrow" id="today-date">Quarta-feira, 2 de setembro</span><h1><span id="greeting">Bom dia</span>, <span id="first-name">Demo</span> <span class="wave">👋</span></h1><p>Aqui está o pulso da sua empresa hoje.</p></div>
+            <div class="heading-actions"><button class="btn secondary" data-action="new-message"><i data-lucide="message-circle-plus"></i> Nova mensagem</button><button class="btn primary" data-action="new-request"><i data-lucide="plus"></i> Nova solicitação</button></div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card"><div class="metric-icon mint"><i data-lucide="users"></i></div><div class="metric-meta"><span>Pessoas ativas</span><strong id="metric-people">—</strong><small id="metric-people-delta"></small></div></article>
+            <article class="metric-card"><div class="metric-icon amber"><i data-lucide="clock-3"></i></div><div class="metric-meta"><span>Pendências do RH</span><strong id="metric-pending">—</strong><small><b class="dot danger"></b> <span id="metric-due-today">—</span> vencem hoje</small></div></article>
+            <article class="metric-card"><div class="metric-icon blue"><i data-lucide="message-square-text"></i></div><div class="metric-meta"><span>Mensagens não lidas</span><strong id="metric-unread">—</strong><small id="metric-unread-detail"></small></div></article>
+            <article class="metric-card"><div class="metric-icon rose"><i data-lucide="heart-pulse"></i></div><div class="metric-meta"><span>Clima da equipe</span><strong id="metric-climate">—<em>/10</em></strong><small id="metric-climate-delta"></small></div></article>
+          </div>
+
+          <div class="panel" id="climate-prompt" hidden style="padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div><strong style="font-size:13px;">Pesquisa de clima aberta</strong><p style="margin:2px 0 0;font-size:11px;color:#7e8b87;">Leva 30 segundos e sua resposta não é identificada individualmente.</p></div>
+            <button class="btn primary" onclick="abrirRespostaClima()">Responder agora</button>
+          </div>
+
+          <div class="dashboard-grid">
+            <article class="panel priority-panel">
+              <div class="panel-head"><div><h2>Prioridades para hoje</h2><p>Itens que precisam da sua atenção</p></div><button class="text-btn" data-view-link="requests">Ver todas <i data-lucide="arrow-right"></i></button></div>
+              <div class="priority-list" id="priority-list"></div>
+            </article>
+
+            <article class="panel culture-panel">
+              <div class="panel-head"><div><h2>Pulso da cultura</h2><p id="culture-period">Rodada atual</p></div></div>
+              <div class="culture-score"><div class="score-ring"><span id="culture-pct">—<small>%</small></span></div><div><strong id="culture-label">Sem dados</strong><p>Engajamento geral</p><span id="culture-delta"></span></div></div>
+              <div class="mini-bars"><div><span>Comunicação</span><b><i id="bar-comunicacao" style="width:0%"></i></b><em id="val-comunicacao">—</em></div><div><span>Liderança</span><b><i id="bar-lideranca" style="width:0%"></i></b><em id="val-lideranca">—</em></div><div><span>Bem-estar</span><b><i id="bar-bem_estar" style="width:0%"></i></b><em id="val-bem_estar">—</em></div></div>
+              <button class="full-link" data-view-link="analytics">Ver análise completa <i data-lucide="arrow-up-right"></i></button>
+            </article>
+
+            <article class="panel feed-panel">
+              <div class="panel-head"><div><h2>Acontecendo agora</h2><p>Movimentações recentes</p></div><button class="icon-btn"><i data-lucide="sliders-horizontal"></i></button></div>
+              <div class="activity-feed" id="activity-feed"></div>
+            </article>
+
+            <article class="panel celebration-panel" id="celebration-panel">
+              <div class="celebration-art"><span>✦</span><div class="avatar avatar-yellow" id="celebration-avatar">JS</div><span>✦</span></div>
+              <span class="eyebrow">Celebração do dia</span><h2 id="celebration-title">1 ano de casa! 🎉</h2><p id="celebration-text">Pessoa Demo 02 completa hoje seu primeiro ano com a gente.</p>
+              <button class="btn dark" id="celebration-btn" data-action="celebrate"><i data-lucide="party-popper"></i> Enviar parabéns</button>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="view-messages">
+          <div class="page-heading compact"><div><span class="eyebrow">Comunicação interna</span><h1>Mensagens</h1><p>Converse com pessoas e grupos sem perder o contexto.</p></div><button class="btn primary" data-action="new-message"><i data-lucide="message-circle-plus"></i> Nova conversa</button></div>
+          <div class="messenger panel">
+            <aside class="conversation-column">
+              <div class="conversation-tools"><label><i data-lucide="search"></i><input id="conversation-search" placeholder="Buscar conversa"></label><button class="icon-btn" data-action="new-message"><i data-lucide="square-pen"></i></button></div>
+              <div class="conversation-tabs"><button class="active" data-conversation-filter="all">Todas</button><button data-conversation-filter="unread">Não lidas <span>0</span></button><button data-conversation-filter="groups">Grupos</button></div>
+              <div id="conversation-list" class="conversation-list"></div>
+            </aside>
+            <section class="chat-column">
+              <header class="chat-head"><div class="avatar avatar-mint" id="chat-avatar">PC</div><div class="chat-title"><h2 id="chat-name">Pessoas & Cultura</h2><p id="chat-status"><span></span> 6 membros • 3 online</p></div><label class="chat-inline-search" id="chat-search-box" hidden><i data-lucide="search"></i><input id="message-search" placeholder="Buscar nesta conversa"><button type="button" id="close-message-search" aria-label="Fechar busca"><i data-lucide="x"></i></button></label><div class="chat-actions"><button type="button" class="icon-btn" id="open-message-search" aria-label="Buscar nesta conversa"><i data-lucide="search"></i></button><button type="button" class="icon-btn" id="open-participants" aria-label="Ver participantes"><i data-lucide="users"></i></button><div class="chat-more-wrap"><button type="button" class="icon-btn" id="open-chat-menu" aria-label="Mais opções"><i data-lucide="more-horizontal"></i></button><div class="chat-more-menu" id="chat-more-menu" hidden><button type="button" data-chat-menu="read"><i data-lucide="check-check"></i> Marcar como lida</button><button type="button" data-chat-menu="participants"><i data-lucide="users"></i> Ver participantes</button></div></div></div></header>
+              <div class="message-stream" id="message-stream"></div>
+              <form class="composer" id="message-form"><input type="file" id="message-attachment" accept="image/jpeg,image/png,application/pdf" hidden><button type="button" class="icon-btn" id="attach-message" aria-label="Anexar arquivo"><i data-lucide="paperclip"></i></button><div><textarea id="message-input" rows="1" placeholder="Escreva uma mensagem…"></textarea><span id="composer-hint">Enter para enviar • Shift + Enter para quebrar linha</span></div><div class="emoji-wrap"><button type="button" class="icon-btn" id="open-emoji-menu" aria-label="Adicionar emoji"><i data-lucide="smile"></i></button><div class="emoji-menu" id="emoji-menu" hidden><button type="button">😀</button><button type="button">😂</button><button type="button">😍</button><button type="button">👍</button><button type="button">🎉</button><button type="button">❤️</button></div></div><button class="send-btn" aria-label="Enviar"><i data-lucide="send"></i></button></form>
+            </section>
+            <aside class="context-column"><div class="context-hero"><div class="avatar avatar-mint large">PC</div><h3>Pessoas & Cultura</h3><p>Canal oficial do time de RH</p></div><div class="context-section"><h4>Sobre</h4><p>Alinhamentos, novidades e dúvidas sobre pessoas e cultura.</p></div><div class="context-section"><h4>Arquivos compartilhados <button>Ver todos</button></h4><div class="file-row"><span class="file-icon pdf">PDF</span><div><strong>Política de férias.pdf</strong><small>1,8 MB • hoje</small></div></div><div class="file-row"><span class="file-icon sheet">XLS</span><div><strong>Calendário 2026.xlsx</strong><small>640 KB • ontem</small></div></div></div></aside>
+          </div>
+        </section>
+
+        <section class="view" id="view-people">
+          <div class="page-heading compact"><div><span class="eyebrow">Diretório organizacional</span><h1>Pessoas</h1><p id="people-summary">Carregando…</p></div><div class="heading-actions"><button class="btn primary" data-profile-link data-profile-target="/cadastro.html"><i data-lucide="user-plus"></i> Nova pessoa</button></div></div>
+          <article class="panel data-panel"><div class="table-toolbar"><label class="table-search"><i data-lucide="search"></i><input id="people-search" placeholder="Buscar por nome, cargo ou área"></label><div><button class="filter-btn" id="people-toggle-inactive"><i data-lucide="list-filter"></i> <span id="people-toggle-inactive-label">Mostrar inativos</span></button><button class="filter-btn" id="people-sort-toggle"><i data-lucide="arrow-down-up"></i> <span id="people-sort-label">Nome</span></button></div></div><div class="table-wrap"><table><thead><tr><th>Pessoa</th><th>Área</th><th>Grupo de acesso</th><th>Status</th><th>Admissão</th><th>Ações</th></tr></thead><tbody id="people-table"></tbody></table></div><div class="table-footer"><span id="people-table-summary">Carregando pessoas…</span></div></article>
+        </section>
+
+        <section class="view" id="view-requests">
+          <div class="page-heading compact"><div><span class="eyebrow">Central de atendimento</span><h1>Solicitações</h1><p>Acompanhe demandas, aprovações e SLAs do RH.</p></div><button class="btn primary" data-action="new-request"><i data-lucide="plus"></i> Nova solicitação</button></div>
+          <div class="request-summary"><button class="active" data-request-filter="all"><span>Todas</span><strong id="request-count-all">0</strong></button><button data-request-filter="pending"><span>Pendentes</span><strong id="request-count-pending">0</strong></button><button data-request-filter="in_review"><span>Em análise</span><strong id="request-count-review">0</strong></button><button data-request-filter="closed"><span>Concluídas</span><strong id="request-count-closed">0</strong></button></div>
+          <article class="panel data-panel"><div class="table-toolbar"><label class="table-search"><i data-lucide="search"></i><input id="request-search" placeholder="Buscar solicitação"></label></div><div class="table-wrap"><table><thead><tr><th>Solicitação</th><th id="th-solicitante">Solicitante</th><th>Criada em</th><th>SLA</th><th>Status</th><th>Ações</th></tr></thead><tbody id="requests-table"></tbody></table></div></article>
+        </section>
+
+        <section class="view" id="view-communications">
+          <div class="page-heading compact"><div><span class="eyebrow">Alcance e alinhamento</span><h1>Comunicados</h1><p>Publique para toda a empresa ou segmente por público.</p></div><button class="btn primary" id="new-notice-btn" data-permission="notices.create"><i data-lucide="plus"></i> Novo comunicado</button></div>
+          <div class="comm-metrics"><article><span>Taxa média de leitura</span><strong id="comm-read-rate">—</strong><small>com base nas leituras registradas</small></article><article><span>Publicados este mês</span><strong id="comm-published">—</strong><small>comunicados ativos</small></article><article><span>Pessoas alcançadas</span><strong id="comm-reached">—</strong><small id="comm-reached-detail">usuários únicos</small></article></div>
+          <div class="communications-grid" id="communications-grid"></div>
+        </section>
+
+        <section class="view" id="view-analytics">
+          <div class="page-heading compact"><div><span class="eyebrow">People analytics</span><h1>Indicadores</h1><p>Decisões de pessoas com contexto e dados confiáveis.</p></div><button class="btn secondary" id="export-analytics"><i data-lucide="download"></i> Exportar relatório</button></div>
+<div class="analytics-grid"><article class="panel analytics-main"><div class="panel-head"><div><h2>Headcount e movimentações</h2><p>Evolução dos últimos 6 meses</p></div><span class="period-btn">Últimos 6 meses</span></div><div class="chart-legend"><span><i class="legend-dot teal"></i>Headcount</span><span><i class="legend-dot coral"></i>Admissões</span><span><i class="legend-dot gray"></i>Desligamentos</span></div><div class="bar-chart" id="headcount-chart"></div></article><article class="panel"><div class="panel-head"><div><h2>Distribuição por área</h2><p id="department-total">—</p></div></div><div class="donut-wrap"><div class="donut"><span id="department-count">—<small>áreas</small></span></div><div class="donut-legend" id="department-legend"></div></div></article>
+<article class="panel"><div class="panel-head"><div><h2>Pesquisa de clima</h2><p id="climate-admin-sub">—</p></div><button class="btn secondary" id="btn-abrir-rodada-clima" data-permission="climate.open_round" hidden onclick="abrirNovaRodadaClima()">Abrir nova rodada</button></div><p id="climate-admin-detalhe" style="font-size:11px;color:#7e8b87;margin:0;">Fecha a rodada atual (se houver) e abre uma nova. Todo colaborador ativo pode responder uma vez.</p></article></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="request-modal" aria-hidden="true"><div class="modal"><button class="modal-close" data-close-modal><i data-lucide="x"></i></button><span class="eyebrow">Autosserviço</span><h2>Nova solicitação</h2><p>O RH receberá a demanda com o SLA correspondente.</p><form id="request-form"><label>Tipo<select id="request-type" required><option value="">Selecione…</option></select></label><label>Detalhes<textarea id="request-description" rows="4" placeholder="Conte o que você precisa"></textarea></label><div class="modal-actions"><button type="button" class="btn secondary" data-close-modal>Cancelar</button><button class="btn primary">Enviar solicitação</button></div></form></div></div>
+  <div class="modal-backdrop" id="request-detail-modal" aria-hidden="true"><div class="modal"><button class="modal-close" data-close-modal><i data-lucide="x"></i></button><span class="eyebrow" id="detail-tipo">Solicitação</span><h2 id="detail-status"></h2><div class="detail-row" id="detail-solicitante-row" hidden><small>Solicitante</small><strong id="detail-solicitante"></strong></div><div class="detail-row"><small>Criada em</small><strong id="detail-criada"></strong></div><div class="detail-row"><small>SLA</small><strong id="detail-sla"></strong></div><div class="detail-row"><small>Descrição</small><p id="detail-descricao"></p></div><div class="detail-row" id="detail-nota-row" hidden><small>Observação do RH</small><p id="detail-nota"></p></div><div class="modal-actions"><button type="button" class="btn secondary" data-close-modal>Fechar</button></div></div></div>
+  <div class="modal-backdrop" id="climate-modal" aria-hidden="true"><div class="modal"><button class="modal-close" data-close-modal><i data-lucide="x"></i></button><span class="eyebrow">Pesquisa de clima</span><h2>Como você avalia a empresa agora?</h2><p>De 0 a 10. Sua resposta não é vinculada ao seu nome em nenhum relatório.</p><form id="climate-form" onsubmit="return false"><label>Comunicação<input type="number" id="climate-comunicacao" min="0" max="10" step="1" required placeholder="0 a 10"></label><label>Liderança<input type="number" id="climate-lideranca" min="0" max="10" step="1" required placeholder="0 a 10"></label><label>Bem-estar<input type="number" id="climate-bem_estar" min="0" max="10" step="1" required placeholder="0 a 10"></label><div class="modal-actions"><button type="button" class="btn secondary" data-close-modal>Cancelar</button><button type="button" class="btn primary" id="climate-enviar" onclick="enviarRespostaClima()">Enviar resposta</button></div></form></div></div>
+  <div class="modal-backdrop" id="notice-modal" aria-hidden="true"><div class="modal"><button class="modal-close" data-close-modal><i data-lucide="x"></i></button><span class="eyebrow">Comunicação interna</span><h2>Novo comunicado</h2><p>Publique uma atualização para todas as pessoas do tenant.</p><form id="notice-form"><label>Título<input id="notice-title" maxlength="180" required placeholder="Título do comunicado"></label><label>Conteúdo<textarea id="notice-content" maxlength="10000" rows="6" required placeholder="Escreva a mensagem"></textarea></label><label>Prioridade<select id="notice-priority"><option value="normal">Geral</option><option value="important">Importante</option><option value="urgent">Urgente</option></select></label><label class="check-label"><input type="checkbox" id="notice-email"> Notificar também por e-mail</label><div class="modal-actions"><button type="button" class="btn secondary" data-close-modal>Cancelar</button><button class="btn primary">Publicar comunicado</button></div></form></div></div>
+  <div class="modal-backdrop" id="conversation-modal" aria-hidden="true"><div class="modal"><button class="modal-close" data-close-modal><i data-lucide="x"></i></button><span class="eyebrow">Mensageria</span><h2>Nova conversa</h2><p>Inicie uma conversa direta ou crie um grupo.</p><form id="conversation-form"><label>Tipo<select id="conversation-type"><option value="direct">Conversa direta</option><option value="group">Grupo</option></select></label><label id="conversation-name-field" hidden>Nome do grupo<input id="conversation-name" placeholder="Ex.: Lideranças"></label><label>Participantes<select id="conversation-members" multiple required></select><small>Em grupos, selecione duas ou mais pessoas.</small></label><div class="modal-actions"><button type="button" class="btn secondary" data-close-modal>Cancelar</button><button class="btn primary">Criar conversa</button></div></form></div></div>
+  <div class="modal-backdrop" id="participants-modal" aria-hidden="true"><div class="modal"><button class="modal-close" data-close-modal><i data-lucide="x"></i></button><span class="eyebrow">Conversa</span><h2>Participantes</h2><p>Pessoas com acesso a esta conversa.</p><div class="participant-list" id="participant-list"></div><div class="modal-actions"><button type="button" class="btn secondary" data-close-modal>Fechar</button></div></div></div>
+  <div class="modal-backdrop" id="features-modal" aria-hidden="true"><div class="modal"><button class="modal-close" data-close-modal><i data-lucide="x"></i></button><span class="eyebrow">Acesso individual</span><h2 id="features-modal-title">Funcionalidades</h2><p>Desmarque o que essa pessoa não deve ver. Uma funcionalidade só fica disponível se a empresa também permitir.</p><form id="features-modal-form" onsubmit="return false"><div id="features-modal-list"></div></form><div class="modal-actions"><button type="button" class="btn secondary" data-close-modal>Cancelar</button><button type="button" class="btn primary" id="features-modal-save">Salvar</button></div></div></div>
+  <div class="toast-stack" id="toast-stack"></div>
+
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
