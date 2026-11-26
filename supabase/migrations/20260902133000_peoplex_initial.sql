@@ -271,5 +271,5 @@ RETURNS BIGINT LANGUAGE sql STABLE AS $$
   SELECT NULLIF(current_setting('app.company_id', true), '')::BIGINT;
 $$;
 
--- Cópia acadêmica: sem empresas, usuários ou senhas pré-cadastrados.
+-- Estrutura inicial sem empresas, usuários ou senhas pré-cadastrados.
 COMMIT;
